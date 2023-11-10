@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        font-family: sans-serif;
+      }
+      .chartMenu {
+        width: 100vw;
+        height: 40px;
+        background: #41c0f6;
+        color: rgb(35, 175, 213), 1;
+      }
+      .chartMenu p {
+        padding: 10px;
+        font-size: 20px;
+      }
+      .chartCard {
+        width: 100vw;
+        height: calc(100vh - 40px);
+        background: rgb(255, 255, 255);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 40px;
+      }
+      .chartBox {
+        width: 1200px;
+        padding: 20px;
+        border-radius: 20px;
+        border: solid 3px rgb(66, 177, 213);
+        background: white;
+      }
+      .pageTitle {
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+        position: absolute;
+        top: 120px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .formContainer {
+        margin-top: 20px;
+        text-align: center;
+      }
+      input, select, button {
+        margin: 5px;
+        padding: 8px;
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chartMenu">
+    </div>
+    <div class="pageTitle">Project Management Calendar</div>
+    <div class="chartCard">
+      <div class="chartBox">
+        <canvas id="myChart"></canvas>
+        <div class="formContainer">
+          <label for="projectName">Project Name:</label>
+          <input type="text" id="projectName" required>
+          <label for="startDate">Start Date:</label>
+          <input type="date" id="startDate" required>
+          <label for="endDate">End Date:</label>
+          <input type="date" id="endDate" required>
+          <label for="status">Status:</label>
+          <select id="status" required>
+            <option value="Phase 1">Phase 1</option>
+            <option value="Phase 2">Phase 2</option>
+            <option value="Phase 3">Phase 3</option>
+          </select>
+          <button onclick="addProject()">Add Project</button>
+        </div>
+      </div>
+    </div>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+    <script>
+    // setup 
+    const data = {
+      // labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      datasets: [{
+        label: 'Projects',
+        data: [
+          { x: ['2023-11-09', '2023-11-30'], y:'Project A', status: 'Phase 1'},
+          { x: ['2023-10-19', '2023-11-28'], y:'Project B', status: 'Phase 2'},
+          { x: ['2023-11-08', '2023-12-24'], y:'Project C', status: 'Phase 3'},
+          { x: ['2023-10-01', '2023-12-16'], y:'Project D', status: 'Phase 2'},
+          { x: ['2023-11-19', '2023-11-28'], y:'Project E', status: 'Phase 1'},
+          { x: ['2023-11-24', '2023-12-21'], y:'Project F', status: 'Phase 1'},
+          { x: ['2023-11-29', '2023-12-17'], y:'Project G', status: 'Phase 1'}
+        ],
+        backgroundColor: [
+          'rgba(255, 26, 104, 0.2)',
+          'rgba(54, 162, 235, 0.2)',
+          'rgba(255, 206, 86, 0.2)',
+          'rgba(75, 192, 192, 0.2)',
+          'rgba(153, 102, 255, 0.2)',
+          'rgba(255, 159, 64, 0.2)',
+          'rgba(0, 0, 0, 0.2)'
+        ],
+        borderColor: [
+          'rgba(255, 26, 104, 1)',
+          'rgba(54, 162, 235, 1)',
+          'rgba(255, 206, 86, 1)',
+          'rgba(75, 192, 192, 1)',
+          'rgba(153, 102, 255, 1)',
+          'rgba(255, 159, 64, 1)',
+          'rgba(0, 0, 0, 1)'
+        ],
+        borderWidth: 1,
+        borderSkipped: false,
+        borderRadius: 7,
+        barPercentage: 0.6
+      }]
+    };
+
+
+    // status plugin block
+    const status = {
+      id: 'status',
+      afterDatasetsDraw(chart, args, pluginOptions) {
+        const { ctx, data, chartArea: { top, bnottom, left, right }, scales: { x, y
+        } } = chart;
+        
+        ctx.font = 'bolder 12 px sans-serif';
+        ctx.fillStyle = 'black';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
+        data.datasets[0].data.forEach((datapoint, index) => {
+          ctx.fillText(datapoint.status, right+50, y.getPixelForValue(index));
+        })
+      }
+    }
+
+    // presentLine plugin
+    const todayLine = {
+      id: 'todayLine',
+      afterDatasetsDraw(chart, args, pluginOptions) {
+        const {ctx, data, chartArea: {top, bottom, left, right}, scales: {x,  y
+          }} = chart;
+
+        ctx.save();
+
+        ctx.beginPath();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'rgba(0, 0, 100, 1)';
+        ctx.setLineDash([6,6]);
+        ctx.moveTo(x.getPixelForValue(new Date()), top);
+        ctx.lineTo(x.getPixelForValue(new Date()), bottom);
+        ctx.stroke();
+
+        ctx.setLineDash([])
+      
+        // ctx.restore();
+      }
+    }
+
+    // config 
+    const config = {
+      type: 'bar',
+      data,
+      options: {
+        layout: {
+          padding: {
+            left: 20,
+            right: 100
+          }
+        },
+
+        indexAxis: 'y',
+        scales: {
+          x: {
+            position: 'top',
+            type: 'time',
+            time: {
+            unit: 'day'
+           },
+           min: '2023-10-01',
+           max: '2023-12-31',
+           bounds: 'data'
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          }
+      }
+      },
+      plugins: [todayLine, status]
+    };
+
+    // render init block
+    const myChart = new Chart(
+      document.getElementById('myChart'),
+      config
+    );
+
+    // Instantly assign Chart.js version
+    const chartVersion = document.getElementById('chartVersion');
+    chartVersion.innerText = Chart.version;
+
+      function addProject() {
+        const projectName = document.getElementById('projectName').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const status = document.getElementById('status').value;
+
+        const newProject = {
+          x: [startDate, endDate],
+          y: projectName,
+          status: status,
+        };
+
+        myChart.data.datasets[0].data.push(newProject);
+        myChart.update();
+      }
+
+      // Function to remove a project
+  function removeProject(index) {
+    myChart.data.datasets[0].data.splice(index, 1);
+    myChart.update();
+  }
+
+  // Function to render project removal buttons
+  function renderRemoveButtons() {
+    const { ctx, data, scales: { x, y } } = myChart;
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillStyle = 'red';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+
+    data.datasets[0].data.forEach((datapoint, index) => {
+      const xValue = x.getPixelForValue(datapoint.x[1]) + 5;
+      const yValue = y.getPixelForValue(index);
+
+      ctx.fillText('❌', xValue, yValue);
+
+      // Add click event listener to remove the project on button click
+      myChart.canvas.addEventListener('click', (event) => {
+        const mouseX = event.clientX - myChart.canvas.getBoundingClientRect().left;
+        const mouseY = event.clientY - myChart.canvas.getBoundingClientRect().top;
+
+        if (
+          mouseX > xValue &&
+          mouseX < xValue + 15 &&
+          mouseY > yValue - 8 &&
+          mouseY < yValue + 8
+        ) {
+          removeProject(index);
+        }
+      });
+    });
+  }
+
+    // Call renderRemoveButtons after rendering the chart
+    myChart.plugins.push({
+    id: 'renderRemoveButtons',
+    afterDraw: renderRemoveButtons,
+  })
+  
+    </script>
+  </body>
+</html>
